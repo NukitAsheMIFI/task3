@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdbool.h>
+#include <ctype.h>
 #define BUF_SIZE 64 
 
-void plane(char **arr, size_t arr_size, int dir);
+void plain(char **arr, size_t arr_size, int dir);
 void lex(char **arr, size_t arr_size, int dir);
+bool is_empty(char *token);
 
 int main(int argc, char **argv){
 	if (argc < 4){
@@ -56,26 +58,26 @@ int main(int argc, char **argv){
 	char *token = strtok(text, "\n");
 	int i = 0;
 	while (token != NULL){
-
-		if (i + 1 > (int)arr_size){
-			arr_size *= 2;
-			char **temp_arr = realloc(arr, arr_size *  sizeof(char*));
-			if (temp_arr == NULL){
-				perror("allocation memory error");
-				fclose(in_file);
-				fclose(out_file);
-				free(text);
-				return EXIT_FAILURE;
-			}	
-			arr = temp_arr;
+		if(!is_empty(token)){
+			if (i + 1 > (int)arr_size){
+				arr_size *= 2;
+				char **temp_arr = realloc(arr, arr_size * sizeof(char*));
+				if (temp_arr == NULL){
+					perror("allocation memory error");
+					fclose(in_file);
+					fclose(out_file);
+					free(text);
+					return EXIT_FAILURE;
+				}	
+				arr = temp_arr;
+			}
+			arr[i++] = token;
 		}
-		
-		arr[i++] = token;
 		token = strtok(NULL, "\n");
 	}
 
 	arr_size = i;
-	char **temp_arr = realloc(arr, arr_size *  sizeof(char*));
+	char **temp_arr = realloc(arr, arr_size * sizeof(char*));
 	if (temp_arr == NULL){
 		perror("allocation memory error");
 		fclose(in_file);
@@ -85,11 +87,11 @@ int main(int argc, char **argv){
 	}	
 	arr = temp_arr;
 
-	if (strcmp(mod, "plane") == 0) {
-		plane(arr, arr_size, 1);
+	if (strcmp(mod, "plain") == 0) {
+		plain(arr, arr_size, 1);
 	} 
-	else if(strcmp(mod, "rplane") == 0) {
-		plane(arr, arr_size, -1);
+	else if(strcmp(mod, "rplain") == 0) {
+		plain(arr, arr_size, -1);
 	}
 	else if(strcmp(mod, "lex") == 0){
 		lex(arr, arr_size, 1);
@@ -106,9 +108,10 @@ int main(int argc, char **argv){
 	}
 
 	for (size_t i = 0; i < arr_size; i++){
-		fprintf(out_file, "%s ", arr[i]);
+		fprintf(out_file, "%s\n", arr[i]);
 	}
 	free(text);
+	free(arr);
 	fclose(in_file);
 	fclose(out_file);
 	return EXIT_SUCCESS;
@@ -118,18 +121,21 @@ int main(int argc, char **argv){
 void lex(char **arr, size_t arr_size, int dir){
 	for (size_t i = 0; i + 1 < arr_size; i++) {
 		for (size_t j = 0; j + 1 < arr_size - i; j++) {
-			int res = strcmp(arr[j], arr[j+1]);
-			res *= dir;
-			if (res > 0){
-				char *temp = arr[j];
-				arr[j] = arr[j + 1];
-				arr[j + 1] = temp;		
+			while (*arr[j] && *arr[j + 1]){
+				int dif = tolower(*arr[j]) - tolower(*arr[j + 1]); 
+				dif *= dir;
+				if (dif > 0){
+					char *temp = arr[j];
+					arr[j] = arr[j + 1];
+					arr[j + 1] = temp;
+					break;
+				}		
 			}
 		}
 	}
 }
 
-void plane(char **arr, size_t arr_size, int dir){ //сортировка пузырьком с параметром направления
+void plain(char **arr, size_t arr_size, int dir){ //сортировка пузырьком с параметром направления
 	for (size_t i = 0; i + 1 < arr_size; i++) {
 		for (size_t j = 0; j + 1 < arr_size - i; j++) {
 			size_t k = 0;
@@ -153,3 +159,15 @@ void plane(char **arr, size_t arr_size, int dir){ //сортировка пуз�
 		}
 	}
 }
+
+bool is_empty(char *token){
+	while (*token) {
+		if (!isspace(*token)){
+			return false;
+		}
+		token++;
+	}
+	return true;
+}
+
+
