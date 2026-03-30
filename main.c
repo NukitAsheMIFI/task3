@@ -55,7 +55,7 @@ int main(int argc, char **argv){
 		return EXIT_FAILURE;
 	}
 
-	char *token = strtok(text, "\n");
+	char *token = strtok(text, "\n"); //разделяем текст на слова по символу переноса строки
 	int i = 0;
 	while (token != NULL){
 		if(!is_empty(token)){
@@ -77,15 +77,24 @@ int main(int argc, char **argv){
 	}
 
 	arr_size = i;
-	char **temp_arr = realloc(arr, arr_size * sizeof(char*));
-	if (temp_arr == NULL){
-		perror("allocation memory error");
+	if (i != 0) { //если все слова "пустые" realloc выдаст ошибку
+		char **temp_arr = realloc(arr, arr_size * sizeof(char*));
+		if (temp_arr == NULL){
+			perror("allocation memory error");
+			fclose(in_file);
+			fclose(out_file);
+			free(text);
+			return EXIT_FAILURE;
+		}	
+		arr = temp_arr;
+	}
+	else{
+		printf("все словы пустые\n");
 		fclose(in_file);
 		fclose(out_file);
 		free(text);
-		return EXIT_FAILURE;
-	}	
-	arr = temp_arr;
+		return EXIT_SUCCESS;
+	}
 
 	if (strcmp(mod, "plain") == 0) {
 		plain(arr, arr_size, 1);
@@ -121,15 +130,22 @@ int main(int argc, char **argv){
 void lex(char **arr, size_t arr_size, int dir){
 	for (size_t i = 0; i + 1 < arr_size; i++) {
 		for (size_t j = 0; j + 1 < arr_size - i; j++) {
-			while (*arr[j] && *arr[j + 1]){
-				int dif = tolower(*arr[j]) - tolower(*arr[j + 1]); 
+			char *p1 = arr[j];
+			char *p2 = arr[j + 1];
+			while (*p1 != '\0' && *p2 != '\0'){
+				int dif = tolower((unsigned char)*p1) - tolower((unsigned char)*p2); //unsigned char для символов кириллицы
 				dif *= dir;
-				if (dif > 0){
+				if (dif > 0){ //слова нужно менять местами
 					char *temp = arr[j];
 					arr[j] = arr[j + 1];
 					arr[j + 1] = temp;
 					break;
-				}		
+				}
+				else if (dif < 0){
+					break;
+				}
+				p1++; //двигаем указатель дальше
+				p2++;	
 			}
 		}
 	}
@@ -162,7 +178,7 @@ void plain(char **arr, size_t arr_size, int dir){ //сортировка пуз�
 
 bool is_empty(char *token){
 	while (*token) {
-		if (!isspace(*token)){
+		if (!isspace((unsigned char)*token)){
 			return false;
 		}
 		token++;
