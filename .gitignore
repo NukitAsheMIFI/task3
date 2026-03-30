@@ -1,0 +1,5 @@
+*.o
+*.exe
+task3
+*.txt
+Makefile
